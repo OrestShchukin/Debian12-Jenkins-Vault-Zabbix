@@ -9,10 +9,11 @@ services:
       VAULT_DEV_ROOT_TOKEN_ID: root
       VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
       SKIP_SETCAP: "1"
-    command: vault server -dev -dev-root-token-id=root -dev-listen-address=0.0.0.0.8200
+    command: vault server -dev -dev-root-token-id=root -dev-listen-address=0.0.0.0:8200
 
   jenkins:
-    image: jenkins/jenkins:lts
+    build:
+      context: ./jenkins
     container_name: jenkins
     restart: unless-stopped
     ports:
@@ -22,7 +23,6 @@ services:
       JAVA_OPTS: -Djenkins.install.runSetupWizard=false
     volumes:
       - jenkins_data:/var/jenkins_home
-      - ./jenkins/init.groovy.d:/usr/share/jenkins/ref/init.groovy.d:ro
 
 volumes:
     jenkins_data:
