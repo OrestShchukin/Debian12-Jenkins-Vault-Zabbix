@@ -144,7 +144,7 @@ else
   echo "[INFO] Host already exists with ID ${HOST_ID}."
 fi
 
-if [ -z "$HOST_ID" ] || [ "HOST_ID" = "null"]; then
+if [ -z "$HOST_ID" ] || [ "HOST_ID" = "null" ]; then
   echo "[ERROR] Failed to create or get host ID."
   exit 1
 fi
