@@ -24,5 +24,48 @@ services:
     volumes:
       - jenkins_data:/var/jenkins_home
 
+  postgres:
+    image: postgres:16
+    container_name: zabbix-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: zabbix
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbixpass
+    volumes:
+      - zabbix_postgres_data:/var/lib/postgresql/data
+
+  zabbix-server:
+    image: zabbix/zabbix-server-pgsql:ubuntu-7.0-latest
+    container_name: zabbix-server
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      DB_SERVER_HOST: postgres
+      POSTGRES_DB: zabbix
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbixpass
+    ports:
+      - "10051:10051"
+
+  zabbix-web:
+    image: zabbix/zabbix-web-nginx-pgsql:ubuntu-7.0-latest
+    container_name: zabbix-web
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - zabbix-server
+    environment:
+      ZBX_SERVER_HOST: zabbix-server
+      DB_SERVER_HOST: postgres
+      POSTGRES_DB: zabbix
+      POSTGRES_USER: zabbix
+      POSTGRES_PASSWORD: zabbixpass
+      PHP_TZ: Europe/Kiev
+    ports:
+      - "8081:8080"
+
 volumes:
     jenkins_data:
+    zabbix_postgres_data:
