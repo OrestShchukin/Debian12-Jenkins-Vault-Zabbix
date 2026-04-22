@@ -10,6 +10,7 @@ chmod +x /vagrant/provision/*.sh
 /vagrant/provision/prepare_dirs.sh
 
 echo "[INFO] Starting Docker Compose services..."
+cd /opt/devops-test/docker
 docker compose up -d --build
 
 /vagrant/provision/install_zabbix_agent.sh
