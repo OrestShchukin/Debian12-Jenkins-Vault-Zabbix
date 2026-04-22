@@ -144,10 +144,31 @@ else
   echo "[INFO] Host already exists with ID ${HOST_ID}."
 fi
 
-if [ -z "$HOST_ID" ]; then
+if [ -z "$HOST_ID" ] || [ "HOST_ID" = "null"]; then
   echo "[ERROR] Failed to create or get host ID."
   exit 1
 fi
+
+echo "[INFO] Getting host interface ID..."
+INTERFACE_ID=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
+  -d "{
+    \"jsonrpc\": \"2.0\",
+    \"method\": \"hostinterface.get\",
+    \"params\": {
+      \"output\": [\"interfaceid\", \"ip\", \"port\"],
+      \"hostids\": \"${HOST_ID}\"
+    },
+    \"auth\": \"${AUTH_TOKEN}\",
+    \"id\": 7
+  }" "$ZBX_URL" | jq -r '.result[0].interfaceid // empty')
+
+if [ -z "$INTERFACE_ID" ]; then
+  echo "[ERROR] Failed to get host interface ID."
+  exit 1
+fi
+
+echo "[INFO] Host interface ID: ${INTERFACE_ID}"
+
 
 create_item_if_missing() {
   local item_name="$1"
@@ -170,7 +191,8 @@ create_item_if_missing() {
 
   if [ -z "$ITEM_ID" ]; then
     echo "[INFO] Creating item ${item_name}..."
-    curl -s -X POST -H 'Content-Type: application/json-rpc' \
+
+    RESPONSE=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
       -d "{
         \"jsonrpc\": \"2.0\",
         \"method\": \"item.create\",
@@ -178,13 +200,23 @@ create_item_if_missing() {
           \"name\": \"${item_name}\",
           \"key_\": \"${item_key}\",
           \"hostid\": \"${HOST_ID}\",
+          \"interfaceid\": \"${INTERFACE_ID}\",
           \"type\": 0,
           \"value_type\": 3,
           \"delay\": \"30s\"
         },
         \"auth\": \"${AUTH_TOKEN}\",
         \"id\": 11
-      }" "$ZBX_URL" > /dev/null
+      }" "$ZBX_URL")
+
+    echo "$RESPONSE"
+
+    ITEM_ID=$(echo "$RESPONSE" | jq -r '.result.itemids[0] // empty')
+  fi
+
+  if [ -z "$ITEM_ID" ]; then
+    echo "[ERROR] Failed to create item ${item_name} (${item_key})."
+    exit 1
   fi
 }
 
@@ -223,6 +255,39 @@ create_trigger_if_missing() {
       }" "$ZBX_URL" > /dev/null
   fi
 }
+
+echo "[INFO] Checking default 'Zabbix server' host..."
+
+DEFAULT_HOST_ID=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
+  -d "{
+    \"jsonrpc\": \"2.0\",
+    \"method\": \"host.get\",
+    \"params\": {
+      \"output\": [\"hostid\", \"host\"],
+      \"filter\": {
+        \"host\": [\"Zabbix server\"]
+      }
+    },
+    \"auth\": \"${AUTH_TOKEN}\",
+    \"id\": 100
+  }" "$ZBX_URL" | jq -r '.result[0].hostid // empty')
+
+if [ -n "$DEFAULT_HOST_ID" ]; then
+  echo "[INFO] Deleting default 'Zabbix server' host..."
+
+  RESPONSE=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
+    -d "{
+      \"jsonrpc\": \"2.0\",
+      \"method\": \"host.delete\",
+      \"params\": [\"${DEFAULT_HOST_ID}\"],
+      \"auth\": \"${AUTH_TOKEN}\",
+      \"id\": 101
+    }" "$ZBX_URL")
+
+  echo "$RESPONSE"
+else
+  echo "[INFO] Default 'Zabbix server' host not found."
+fi
 
 create_item_if_missing "Jenkins status" "service.jenkins"
 create_item_if_missing "Vault status" "service.vault"
