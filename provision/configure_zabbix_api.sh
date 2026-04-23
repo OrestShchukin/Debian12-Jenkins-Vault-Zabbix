@@ -11,6 +11,9 @@ HOST_GROUP_NAME="Linux servers"
 
 CURL_OPTS=(-s --connect-timeout 5 --max-time 15 -X POST -H 'Content-Type: application/json-rpc')
 
+echo "[INFO] Waiting 20s for Zabbix services to stabilize..."
+sleep 20
+
 echo "[INFO] Starting Zabbix API configuration..."
 
 api_call() {
