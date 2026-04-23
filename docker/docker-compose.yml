@@ -20,7 +20,11 @@ services:
       - "8080:8080"
       - "50000:50000"
     environment:
-      JAVA_OPTS: -Djenkins.install.runSetupWizard=false
+      JAVA_OPTS: 
+        -Djenkins.install.runSetupWizard=false
+        -Dhudson.TcpSlaveAgentListener.hostName=jenkins.local
+      JENKINS_OPTS: 
+        --httpListenAddress=0.0.0.0
     volumes:
       - jenkins_data:/var/jenkins_home
 
