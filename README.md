@@ -202,7 +202,7 @@ vagrant destroy -f
 
 ## 🧠 Design Decisions
 
-* `/opt/devops-test` used as runtime directory (production-like structure)
+* `/opt/devops-stack` used as runtime directory (production-like structure)
 * `/vagrant` used as source of truth
 * Docker Compose network used for internal service communication
 * Reverse proxy used instead of direct port exposure
