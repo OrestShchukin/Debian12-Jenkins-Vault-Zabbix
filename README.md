@@ -50,9 +50,9 @@ After configuration process you should be able to access the services via this U
 
 | Service | URL                     | Credentials       |
 | ------- | ----------------------- | ----------------- |
-| Vault   | http://vault.local:8200 | token: `root`     |
-| Jenkins | http://jenkins.local    | admin / admin123! |
-| Zabbix  | http://zabbix.local     | Admin / zabbix    |
+| Vault   | https://vault.local:8200 | token: `root`     |
+| Jenkins | https://jenkins.local    | admin / admin123! |
+| Zabbix  | https://zabbix.local     | Admin / zabbix    |
 
 ---
 
