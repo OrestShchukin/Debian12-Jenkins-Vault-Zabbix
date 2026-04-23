@@ -4,62 +4,18 @@
 
 This project provides a fully automated DevOps environment deployed using **Vagrant + Docker Compose**.
 
-After running a single command:
-
-```bash
-vagrant up
-```
-
-you will get a complete stack with:
-
-* 🔐 HashiCorp Vault (secrets management)
+* 🔐 HashiCorp Vault (secrets management) (in Dev-mode)!!!
 * 🛠 Jenkins (CI server, preconfigured)
 * 📊 Zabbix (monitoring system)
 * 🔄 Nginx Reverse Proxy (DNS-based access)
 * 🖥 Zabbix Agent (monitoring the VM itself)
 
-All components are automatically configured — **no manual setup required**.
+All components are automatically configured.
 
----
+## ⚙️ Setup
+### 1. Configure hosts file
 
-## 🏗 Architecture
-
-```text
-                ┌────────────────────────────┐
-                │        Host Machine        │
-                │  (with /etc/hosts config) │
-                └─────────────┬──────────────┘
-                              │
-                              ▼
-                   192.168.56.10 (VM)
-                              │
-                   ┌──────────┴──────────┐
-                   │   Nginx Reverse     │
-                   │      Proxy          │
-                   └───────┬─────────────┘
-                           │
-     ┌───────────────┬───────────────┬───────────────┐
-     ▼               ▼               ▼
- Jenkins         Zabbix Web        Vault
- (8080)          (8080)            (8200)
-
-         ▲
-         │
-   Zabbix Server + Agent
-   (monitoring VM + services)
-```
-
----
-
-## 🌐 Access Points
-
-> Add these entries to your `hosts` file (on your host machine):
-```text
-Hosts file locations on different OS:
-> Windows 11: C:\Windows\System32\drivers\etc\hosts
-> Linux: /etc/hosts
-> macOS: /private/etc/hosts
-```
+Add the following entries on your host machine:
 
 ```text
 192.168.56.10 vault.local
@@ -67,13 +23,58 @@ Hosts file locations on different OS:
 192.168.56.10 zabbix.local
 ```
 
-### Services:
+**Hint**: "hosts" file locations on different OS:
+* **Windows 11:** `C:\Windows\System32\drivers\etc\hosts`
+* **Linux:** `/etc/hosts`
+* **macOS:** `/private/etc/hosts`
+
+
+### 2. Start the environment
+```bash
+vagrant up
+```
+
+---
+
+## 🌐 Services:
+
+After configuration process you should be able to access the services via this URLs and be able to authentificate using provided credentials:
 
 | Service | URL                     | Credentials       |
 | ------- | ----------------------- | ----------------- |
 | Vault   | http://vault.local:8200 | token: `root`     |
 | Jenkins | http://jenkins.local    | admin / admin123! |
 | Zabbix  | http://zabbix.local     | Admin / zabbix    |
+
+---
+
+## 🏗 Architecture
+
+The environment runs inside a Vagrant VM (Debian 12) at `192.168.56.10`.
+
+All services are deployed via Docker Compose and connected through an internal Docker network.
+
+| Component     | Role                                 |
+| ------------- | ------------------------------------ |
+| Nginx         | Reverse proxy (domain-based routing) |
+| Jenkins       | CI/CD server                         |
+| Vault         | Secrets management                   |
+| Zabbix Server | Monitoring backend                   |
+| Zabbix Web    | Monitoring UI                        |
+| PostgreSQL    | Zabbix database                      |
+| Zabbix Agent  | Monitors VM and services             |
+
+External access is handled via Nginx:
+
+| Domain        | Target          |
+| ------------- | --------------- |
+| jenkins.local | jenkins:8080    |
+| zabbix.local  | zabbix-web:8080 |
+| vault.local   | vault:8200      |
+
+Zabbix monitors both system metrics and service availability (Jenkins, Vault, Zabbix Server).
+
+
 
 ---
 
