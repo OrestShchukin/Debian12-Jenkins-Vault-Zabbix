@@ -37,7 +37,7 @@ Add the following entries on your host machine:
 
 
 ### 4. Start the environment
-Open the terminal inside the cloned folder and run the command:
+Open the terminal inside the cloned directory and run the command:
 ```bash
 vagrant up
 ```
