@@ -1,0 +1,5 @@
+# Vagrant local state
+.vagrant/
+
+# Log files (optional but recommended)
+*.log

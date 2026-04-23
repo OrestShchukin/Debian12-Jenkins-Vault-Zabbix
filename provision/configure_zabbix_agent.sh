@@ -18,8 +18,9 @@ UnsafeUserParameters=1
 EOF
 
 cat > /etc/zabbix/zabbix_agent2.d/devops-test.conf <<'EOF'
-UserParameter=service.jenkins,curl -fsS http://127.0.0.1:8080/login >/dev/null 2>&1 && echo 1 || echo 0
-UserParameter=service.vault,curl -fsS http://127.0.0.1:8200/v1/sys/health >/dev/null 2>&1 && echo 1 || echo 0
+UserParameter=service.jenkins,curl -fsS -H 'Host: jenkins.local' http://127.0.0.1/login >/dev/null 2>&1 && echo 1 || echo 0
+UserParameter=service.vault,curl -fsS -H 'Host: vault.local' http://127.0.0.1:8200/v1/sys/health >/dev/null 2>&1 && echo 1 || echo 0
+UserParameter=service.zabbix_web,curl -fsS -H 'Host: zabbix.local' http://127.0.0.1/ >/dev/null 2>&1 && echo 1 || echo 0
 UserParameter=service.zabbix_server,nc -z 127.0.0.1 10051 >/dev/null 2>&1 && echo 1 || echo 0
 EOF
 

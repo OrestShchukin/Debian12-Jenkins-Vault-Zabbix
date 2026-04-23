@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ZBX_URL="http://127.0.0.1:8081/api_jsonrpc.php"
+ZBX_URL="http://127.0.0.1/api_jsonrpc.php"
+ZBX_HEADER="Host: zabbix.local"
 ZBX_USER="Admin"
 ZBX_PASS="zabbix"
 
@@ -12,7 +13,7 @@ echo "[INFO] Authorizing in Zabbix API..."
 
 AUTH_TOKEN=""
 for i in {1..20}; do
-  RESPONSE=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
+  RESPONSE=$(curl -s -X POST -H 'Host: zabbix.local' -H 'Content-Type: application/json-rpc' \
     -d "{
       \"jsonrpc\": \"2.0\",
       \"method\": \"user.login\",
@@ -45,7 +46,7 @@ fi
 echo "[INFO] Auth successful."
 
 echo "[INFO] Getting Linux by Zabbix agent template ID..."
-TEMPLATE_ID=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
+TEMPLATE_ID=$(curl -s -X POST -H 'Host: zabbix.local' -H 'Content-Type: application/json-rpc' \
   -d "{
     \"jsonrpc\": \"2.0\",
     \"method\": \"template.get\",
@@ -65,7 +66,7 @@ if [ -z "$TEMPLATE_ID" ]; then
 fi
 
 echo "[INFO] Checking if host already exists..."
-HOST_ID=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
+HOST_ID=$(curl -s -X POST -H 'Host: zabbix.local' -H 'Content-Type: application/json-rpc' \
   -d "{
     \"jsonrpc\": \"2.0\",
     \"method\": \"host.get\",
@@ -83,7 +84,7 @@ if [ -z "$HOST_ID" ]; then
   echo "[INFO] Creating host ${HOST_NAME}..."
 
   # знайдемо або створимо групу
-  GROUP_ID=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
+  GROUP_ID=$(curl -s -X POST -H 'Host: zabbix.local' -H 'Content-Type: application/json-rpc' \
     -d "{
       \"jsonrpc\": \"2.0\",
       \"method\": \"hostgroup.get\",
@@ -98,7 +99,7 @@ if [ -z "$HOST_ID" ]; then
     }" "$ZBX_URL" | jq -r '.result[0].groupid // empty')
 
   if [ -z "$GROUP_ID" ]; then
-    GROUP_ID=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
+    GROUP_ID=$(curl -s -X POST -H 'Host: zabbix.local' -H 'Content-Type: application/json-rpc' \
       -d "{
         \"jsonrpc\": \"2.0\",
         \"method\": \"hostgroup.create\",
@@ -110,7 +111,7 @@ if [ -z "$HOST_ID" ]; then
       }" "$ZBX_URL" | jq -r '.result.groupids[0] // empty')
   fi
 
-  HOST_ID=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
+  HOST_ID=$(curl -s -X POST -H 'Host: zabbix.local' -H 'Content-Type: application/json-rpc' \
     -d "{
       \"jsonrpc\": \"2.0\",
       \"method\": \"host.create\",
@@ -150,7 +151,7 @@ if [ -z "$HOST_ID" ] || [ "HOST_ID" = "null" ]; then
 fi
 
 echo "[INFO] Getting host interface ID..."
-INTERFACE_ID=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
+INTERFACE_ID=$(curl -s -X POST -H 'Host: zabbix.local' -H 'Content-Type: application/json-rpc' \
   -d "{
     \"jsonrpc\": \"2.0\",
     \"method\": \"hostinterface.get\",
@@ -174,7 +175,7 @@ create_item_if_missing() {
   local item_name="$1"
   local item_key="$2"
 
-  ITEM_ID=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
+  ITEM_ID=$(curl -s -X POST -H 'Host: zabbix.local' -H 'Content-Type: application/json-rpc' \
     -d "{
       \"jsonrpc\": \"2.0\",
       \"method\": \"item.get\",
@@ -192,7 +193,7 @@ create_item_if_missing() {
   if [ -z "$ITEM_ID" ]; then
     echo "[INFO] Creating item ${item_name}..."
 
-    RESPONSE=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
+    RESPONSE=$(curl -s -X POST -H 'Host: zabbix.local' -H 'Content-Type: application/json-rpc' \
       -d "{
         \"jsonrpc\": \"2.0\",
         \"method\": \"item.create\",
@@ -224,7 +225,7 @@ create_trigger_if_missing() {
   local description="$1"
   local expression="$2"
 
-  TRIGGER_ID=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
+  TRIGGER_ID=$(curl -s -X POST -H 'Host: zabbix.local' -H 'Content-Type: application/json-rpc' \
     -d "{
       \"jsonrpc\": \"2.0\",
       \"method\": \"trigger.get\",
@@ -241,7 +242,7 @@ create_trigger_if_missing() {
 
   if [ -z "$TRIGGER_ID" ]; then
     echo "[INFO] Creating trigger ${description}..."
-    curl -s -X POST -H 'Content-Type: application/json-rpc' \
+    curl -s -X POST -H 'Host: zabbix.local' -H 'Content-Type: application/json-rpc' \
       -d "{
         \"jsonrpc\": \"2.0\",
         \"method\": \"trigger.create\",
@@ -258,7 +259,7 @@ create_trigger_if_missing() {
 
 echo "[INFO] Checking default 'Zabbix server' host..."
 
-DEFAULT_HOST_ID=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
+DEFAULT_HOST_ID=$(curl -s -X POST -H 'Host: zabbix.local' -H 'Content-Type: application/json-rpc' \
   -d "{
     \"jsonrpc\": \"2.0\",
     \"method\": \"host.get\",
@@ -275,7 +276,7 @@ DEFAULT_HOST_ID=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
 if [ -n "$DEFAULT_HOST_ID" ]; then
   echo "[INFO] Deleting default 'Zabbix server' host..."
 
-  RESPONSE=$(curl -s -X POST -H 'Content-Type: application/json-rpc' \
+  RESPONSE=$(curl -s -X POST -H 'Host: zabbix.local' -H 'Content-Type: application/json-rpc' \
     -d "{
       \"jsonrpc\": \"2.0\",
       \"method\": \"host.delete\",

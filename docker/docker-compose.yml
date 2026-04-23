@@ -16,9 +16,9 @@ services:
       context: ./jenkins
     container_name: jenkins
     restart: unless-stopped
-    ports:
-      - "8080:8080"
-      - "50000:50000"
+    expose:
+      - "8080"
+      - "50000"
     environment:
       JAVA_OPTS: 
         -Djenkins.install.runSetupWizard=false
@@ -67,8 +67,8 @@ services:
       POSTGRES_USER: zabbix
       POSTGRES_PASSWORD: zabbixpass
       PHP_TZ: Europe/Kiev
-    ports:
-      - "8081:8080"
+    expose:
+      - "8080"
 
   nginx:
     image: nginx:stable
