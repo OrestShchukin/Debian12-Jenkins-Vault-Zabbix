@@ -228,6 +228,7 @@ delete_default_zabbix_host_if_exists() {
 create_host_if_missing() {
   local response
   local host_id
+  local api_error
 
   host_id="$(get_host_id_by_name "${HOST_NAME}")"
 
@@ -237,47 +238,74 @@ create_host_if_missing() {
     return 0
   fi
 
-  log "Creating host ${HOST_NAME}..."
+  for i in {1..10}; do
+    log "Creating host ${HOST_NAME}... attempt ${i}/10"
 
-  response="$(api_call_retry "{
-    \"jsonrpc\": \"2.0\",
-    \"method\": \"host.create\",
-    \"params\": {
-      \"host\": \"${HOST_NAME}\",
-      \"interfaces\": [
-        {
-          \"type\": 1,
-          \"main\": 1,
-          \"useip\": 1,
-          \"ip\": \"${HOST_IP}\",
-          \"dns\": \"\",
-          \"port\": \"10050\"
-        }
-      ],
-      \"groups\": [
-        {
-          \"groupid\": \"${GROUP_ID}\"
-        }
-      ],
-      \"templates\": [
-        {
-          \"templateid\": \"${TEMPLATE_ID}\"
-        }
-      ]
-    },
-    \"auth\": \"${AUTH_TOKEN}\",
-    \"id\": 50
-  }" "host.create (${HOST_NAME})" 10 5)"
+    response="$(api_call "{
+      \"jsonrpc\": \"2.0\",
+      \"method\": \"host.create\",
+      \"params\": {
+        \"host\": \"${HOST_NAME}\",
+        \"interfaces\": [
+          {
+            \"type\": 1,
+            \"main\": 1,
+            \"useip\": 1,
+            \"ip\": \"${HOST_IP}\",
+            \"dns\": \"\",
+            \"port\": \"10050\"
+          }
+        ],
+        \"groups\": [
+          {
+            \"groupid\": \"${GROUP_ID}\"
+          }
+        ],
+        \"templates\": [
+          {
+            \"templateid\": \"${TEMPLATE_ID}\"
+          }
+        ]
+      },
+      \"auth\": \"${AUTH_TOKEN}\",
+      \"id\": 50
+    }" || true)"
 
-  host_id="$(echo "$response" | jq -r '.result.hostids[0] // empty')"
+    if ! is_valid_json "$response"; then
+      log "host.create (${HOST_NAME}) returned non-JSON response."
+      sleep 5
+      continue
+    fi
 
-  if [ -z "$host_id" ]; then
-    error "Failed to create host ${HOST_NAME}."
-    echo "$response"
-    exit 1
-  fi
+    host_id="$(echo "$response" | jq -r '.result.hostids[0] // empty')"
+    if [ -n "$host_id" ]; then
+      echo "$host_id"
+      return 0
+    fi
 
-  echo "$host_id"
+    api_error="$(extract_json_error "$response")"
+
+    if echo "$api_error" | grep -q 'already exists'; then
+      log "Host ${HOST_NAME} already exists according to API, re-reading host ID..."
+      host_id="$(get_host_id_by_name "${HOST_NAME}")"
+      if [ -n "$host_id" ]; then
+        echo "$host_id"
+        return 0
+      fi
+    fi
+
+    if [ -n "$api_error" ]; then
+      log "API response: ${api_error}"
+    else
+      log "Unknown host.create response:"
+      echo "$response" >&2
+    fi
+
+    sleep 5
+  done
+
+  error "Failed to create or retrieve host ${HOST_NAME} after retries."
+  return 1
 }
 
 get_host_interface_id() {
@@ -431,6 +459,11 @@ if [ -z "$GROUP_ID" ]; then
 fi
 
 HOST_ID="$(create_host_if_missing)"
+
+if ! [[ "$HOST_ID" =~ ^[0-9]+$ ]]; then
+  error "HOST_ID is invalid: $HOST_ID"
+  exit 1
+fi
 
 if [ -z "$HOST_ID" ]; then
   error "Failed to get/create host '${HOST_NAME}'."
