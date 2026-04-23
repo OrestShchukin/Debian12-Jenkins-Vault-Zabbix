@@ -53,7 +53,13 @@ All components are automatically configured — **no manual setup required**.
 
 ## 🌐 Access Points
 
-> Add these entries to your `/etc/hosts` (on your host machine):
+> Add these entries to your `hosts` file (on your host machine):
+```text
+Hosts file locations on different OS:
+> Windows 11: C:\Windows\System32\drivers\etc\hosts
+> Linux: /etc/hosts
+> macOS: /private/etc/hosts
+```
 
 ```text
 192.168.56.10 vault.local
@@ -228,6 +234,3 @@ This project demonstrates:
 * Reverse proxy configuration
 * DevOps best practices
 
----
-
-🔥 Ready for production-like environments and technical interviews.
