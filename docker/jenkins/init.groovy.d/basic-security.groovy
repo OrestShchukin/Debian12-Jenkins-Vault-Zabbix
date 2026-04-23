@@ -26,7 +26,7 @@ instance.save()
 println "--> Jenkins security configured"
 
 def jlc = JenkinsLocationConfiguration.get()
-jlc.setUrl("http://jenkins.local/")
+jlc.setUrl("https://jenkins.local/")
 jlc.save()
 
 println "--> Jenkins URL configured"

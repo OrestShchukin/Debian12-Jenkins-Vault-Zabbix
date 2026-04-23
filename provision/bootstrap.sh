@@ -8,11 +8,11 @@ chmod +x /vagrant/provision/*.sh
 /vagrant/provision/install_packages.sh
 /vagrant/provision/install_docker.sh
 /vagrant/provision/prepare_dirs.sh
+/vagrant/provision/generate_self_signed_certs.sh
 /vagrant/provision/create_systemd_unit.sh
 
-# echo "[INFO] Starting Docker Compose services..."
-# cd /opt/devops-test/docker
-# docker compose up -d --build
+echo "[INFO] Starting Devops-stack service..."
+systemctl start devops-stack
 
 /vagrant/provision/install_zabbix_agent.sh
 /vagrant/provision/configure_zabbix_agent.sh

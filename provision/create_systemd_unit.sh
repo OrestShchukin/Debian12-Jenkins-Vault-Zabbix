@@ -25,7 +25,4 @@ EOF
 systemctl daemon-reload
 systemctl enable devops-stack.service
 
-echo "[INFO] Starting Devops-test service..."
-systemctl start devops-stack
-
 echo "[INFO] systemd unit created."

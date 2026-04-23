@@ -16,6 +16,9 @@ apt-get install -y \
   jq \
   unzip \
   git \
-  vim
+  vim \
+  wget \
+  netcat-openbsd \
+  openssl
 
 echo "[INFO] Base packages installed."
