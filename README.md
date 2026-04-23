@@ -1,178 +1,233 @@
-# 🚀 DevOps Test Lab (Vagrant + Docker + Jenkins + Vault + Zabbix)
+# 🚀 DevOps Test Project
 
-This project provisions a complete DevOps lab environment using:
+## 📌 Overview
 
-- **Vagrant** (Debian 12 VM)
-- **Docker & Docker Compose**
-- **Jenkins**
-- **HashiCorp Vault**
-- **Zabbix (Server + Web + Agent)**
-- **Nginx Reverse Proxy**
+This project provides a fully automated DevOps environment deployed using **Vagrant + Docker Compose**.
 
-Everything is fully automated via provisioning scripts.
-
----
-
-# 📦 Architecture Overview
-
-
-Host (Windows/Linux)
-↓
-Vagrant VM (Debian 12)
-↓
-Docker Compose
-↓
-Jenkins:8080
-Vault:8200
-Zabbix:8080
-↓
-Nginx Reverse Proxy
-↓
-┌───────────────┬───────────────┬───────────────┐
-│ jenkins.local │ vault.local │ zabbix.local │
-└───────────────┴───────────────┴───────────────┘
-
-
----
-
-# ⚙️ Requirements
-
-- Vagrant >= 2.3
-- VirtualBox
-- Git
-
----
-
-# 🚀 Quick Start
+After running a single command:
 
 ```bash
-git clone <your-repo-url>
-cd <repo-folder>
-
 vagrant up
+```
 
-⏱ First run may take a few minutes.
+you will get a complete stack with:
 
-🌐 Access Services
+* 🔐 HashiCorp Vault (secrets management)
+* 🛠 Jenkins (CI server, preconfigured)
+* 📊 Zabbix (monitoring system)
+* 🔄 Nginx Reverse Proxy (DNS-based access)
+* 🖥 Zabbix Agent (monitoring the VM itself)
 
-Add to your hosts file:
+All components are automatically configured — **no manual setup required**.
 
-192.168.56.10 jenkins.local
+---
+
+## 🏗 Architecture
+
+```text
+                ┌────────────────────────────┐
+                │        Host Machine        │
+                │  (with /etc/hosts config) │
+                └─────────────┬──────────────┘
+                              │
+                              ▼
+                   192.168.56.10 (VM)
+                              │
+                   ┌──────────┴──────────┐
+                   │   Nginx Reverse     │
+                   │      Proxy          │
+                   └───────┬─────────────┘
+                           │
+     ┌───────────────┬───────────────┬───────────────┐
+     ▼               ▼               ▼
+ Jenkins         Zabbix Web        Vault
+ (8080)          (8080)            (8200)
+
+         ▲
+         │
+   Zabbix Server + Agent
+   (monitoring VM + services)
+```
+
+---
+
+## 🌐 Access Points
+
+> Add these entries to your `/etc/hosts` (on your host machine):
+
+```text
 192.168.56.10 vault.local
+192.168.56.10 jenkins.local
 192.168.56.10 zabbix.local
-🔹 Jenkins
-http://jenkins.local
+```
 
-Default credentials:
+### Services:
 
-admin / admin123!
-🔹 Vault (Dev mode)
-http://vault.local:8200
+| Service | URL                     | Credentials       |
+| ------- | ----------------------- | ----------------- |
+| Vault   | http://vault.local:8200 | token: `root`     |
+| Jenkins | http://jenkins.local    | admin / admin123! |
+| Zabbix  | http://zabbix.local     | Admin / zabbix    |
 
-Token:
+---
 
-root
-🔹 Zabbix
-http://zabbix.local
+## ⚙️ Technologies Used
 
-Default credentials:
+* **Vagrant** – VM provisioning
+* **Docker & Docker Compose** – container orchestration
+* **Nginx** – reverse proxy
+* **Jenkins** – CI/CD server (preconfigured via Groovy)
+* **Vault** – secrets management (dev mode)
+* **Zabbix** – monitoring system
+* **Zabbix Agent 2** – system + service monitoring
 
-Admin / zabbix
-🧠 Features
-✅ Full automation
-Docker installation
-Service provisioning
-Zabbix auto-configuration via API
-Jenkins auto-setup (no setup wizard)
-🔍 Monitoring (Zabbix)
+---
 
-Custom metrics via Zabbix Agent:
+## 🔄 Automation Features
 
-Service	Key
-Jenkins	service.jenkins
-Vault	service.vault
-Zabbix Web	service.zabbix_web
-Zabbix Server	service.zabbix_server
+Everything is configured automatically via provisioning scripts:
 
-Each returns:
+### ✔ Infrastructure
 
-1 → service is UP
-0 → service is DOWN
-🔁 Reverse Proxy
+* VM creation (Debian 12)
+* Docker installation
+* Containers deployment
 
-All services are exposed via Nginx:
+### ✔ Jenkins
 
-Host-based routing (Host header)
-Clean URLs
-Single entry point
-🛠 Project Structure
-.
-├── Vagrantfile
-├── docker/
-│   ├── docker-compose.yml
-│   ├── nginx/
-│   ├── jenkins/
-│   ├── vault/
-│   └── zabbix/
-├── provision/
-│   ├── bootstrap.sh
-│   ├── install_packages.sh
-│   ├── install_docker.sh
-│   ├── prepare_dirs.sh
-│   ├── install_zabbix_agent.sh
-│   ├── configure_zabbix_agent.sh
-│   ├── wait_for_zabbix.sh
-│   └── configure_zabbix_api.sh
-⚠️ Important Notes
-🔹 Line Endings (Windows)
+* Setup wizard disabled
+* Admin user created automatically
+* Plugins installed
+* Security configured
 
-If you see:
+### ✔ Vault
 
-/usr/bin/env: ‘bash\r’: No such file or directory
+* Runs in dev mode
+* Root token preset
 
-Fix with:
+### ✔ Zabbix
 
-dos2unix provision/*.sh
+* Agent installed and configured
+* Host `devops-lab` created via API
+* Linux template attached
+* Custom items created:
 
-Or ensure repo uses LF:
+  * `service.jenkins`
+  * `service.vault`
+  * `service.zabbix_server`
+* Triggers configured for service availability
 
-*.sh text eol=lf
-🔹 Zabbix API Stability
+### ✔ Cleanup
 
-During first vagrant up, Zabbix may not be fully ready.
+* Default `Zabbix server` host removed (not applicable in containerized setup)
 
-The provisioning scripts include:
+---
 
-retries
-API validation
-fallback logic
-🔹 Internal vs External Access
-Users → via reverse proxy
-Automation → direct access (127.0.0.1:8081)
+## 📊 Monitoring
 
-This ensures stability during provisioning.
+Zabbix monitors:
 
-🧪 Useful Commands
-SSH into VM
-vagrant ssh
-Restart services
-cd /opt/devops-test/docker
-docker compose restart
-Re-run Zabbix setup
-sudo /vagrant/provision/configure_zabbix_api.sh
-💡 What This Project Demonstrates
-Infrastructure provisioning with Vagrant
-Container orchestration with Docker Compose
-Service automation (Jenkins, Vault, Zabbix)
-Monitoring setup via API
-Reverse proxy configuration
-Resilient provisioning (retry logic, validation)
-📌 Future Improvements
-HTTPS (Let's Encrypt / self-signed)
-Jenkins pipeline examples
-Vault secrets integration
-Zabbix dashboards & alerts
-Terraform instead of Vagrant
-👨‍💻 Author
+### System metrics:
 
-Orest
+* CPU
+* RAM
+* Disk usage
+
+### Service availability:
+
+* Jenkins
+* Vault
+* Zabbix Server
+
+Service checks are implemented using **Zabbix Agent UserParameters**:
+
+```ini
+service.jenkins
+service.vault
+service.zabbix_server
+```
+
+---
+
+## 🌍 Reverse Proxy
+
+Nginx routes traffic based on domain name:
+
+| Domain        | Target          |
+| ------------- | --------------- |
+| jenkins.local | jenkins:8080    |
+| zabbix.local  | zabbix-web:8080 |
+| vault.local   | vault:8200      |
+
+This eliminates the need for manual port usage.
+
+---
+
+## ▶️ Usage
+
+### Start environment
+
+```bash
+vagrant up
+```
+
+### Re-run provisioning
+
+```bash
+vagrant provision
+```
+
+### Destroy environment
+
+```bash
+vagrant destroy -f
+```
+
+---
+
+## 🧠 Design Decisions
+
+* `/opt/devops-test` used as runtime directory (production-like structure)
+* `/vagrant` used as source of truth
+* Docker Compose network used for internal service communication
+* Reverse proxy used instead of direct port exposure
+* Zabbix configured via API (fully automated monitoring setup)
+
+---
+
+## ⚠️ Notes
+
+* Vault runs in **dev mode** (not for production)
+* Jenkins data is persisted via Docker volume
+* Zabbix database runs in PostgreSQL container
+* Reverse proxy is required for proper service access
+
+---
+
+## 🎯 Result
+
+After deployment, the system provides:
+
+* Fully automated infrastructure
+* Working CI server (Jenkins)
+* Secret management (Vault)
+* Monitoring system (Zabbix)
+* Clean DNS-based access via reverse proxy
+
+No manual UI configuration is required.
+
+---
+
+## 🏁 Conclusion
+
+This project demonstrates:
+
+* Infrastructure as Code
+* Service orchestration
+* Monitoring automation
+* Reverse proxy configuration
+* DevOps best practices
+
+---
+
+🔥 Ready for production-like environments and technical interviews.
