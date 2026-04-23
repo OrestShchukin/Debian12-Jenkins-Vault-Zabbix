@@ -228,6 +228,32 @@ get_or_create_host() {
     else
       echo "[WARN] Empty or invalid host.create response."
     fi
+    echo "[INFO] host.create raw response:"
+    echo "$RESPONSE"
+
+
+    echo "[INFO] Re-checking whether host was created despite missing response..."
+    sleep 2
+
+    RESPONSE=$(api_call "{
+      \"jsonrpc\": \"2.0\",
+      \"method\": \"host.get\",
+      \"params\": {
+        \"output\": [\"hostid\", \"host\"],
+        \"filter\": {
+          \"host\": [\"${HOST_NAME}\"]
+        }
+      },
+      \"auth\": \"${AUTH_TOKEN}\",
+      \"id\": 61
+    }")
+
+    HOST_ID=$(echo "$RESPONSE" | jq -r '.result[0].hostid // empty')
+
+    if [ -n "$HOST_ID" ]; then
+      echo "[INFO] Host appeared after re-check. Using existing host ID ${HOST_ID}."
+      return 0
+    fi
 
     if [ "$i" -lt "$attempts" ]; then
       echo "[INFO] Waiting ${delay}s before retry..."

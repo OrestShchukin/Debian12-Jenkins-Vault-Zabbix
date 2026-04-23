@@ -13,8 +13,24 @@ chmod +x /vagrant/provision/*.sh
 /vagrant/provision/create_systemd_unit.sh
 
 echo "[INFO] Starting Docker Compose services..."
+
 cd /opt/devops-stack/docker
-docker compose up -d --build
+
+for i in 1 2 3; do
+  echo "[INFO] docker compose attempt ${i}/3"
+  if docker compose up -d --build; then
+    echo "[INFO] Docker Compose started successfully."
+    break
+  fi
+
+  if [ "$i" -lt 3 ]; then
+    echo "[WARN] Docker Compose failed. Retrying in 15s..."
+    sleep 15
+  else
+    echo "[ERROR] Docker Compose failed after 3 attempts."
+    exit 1
+  fi
+done
 
 /vagrant/provision/install_zabbix_agent.sh
 /vagrant/provision/configure_zabbix_agent.sh
