@@ -1,10 +1,10 @@
-# 🚀 DevOps Test Project
+# DevOps Test Project
 
 ## 📌 Overview
 
 This project provides a fully automated DevOps environment deployed using **Vagrant + Docker Compose**.
 
-* 🔐 HashiCorp Vault (secrets management) (in Dev-mode)!!!
+* 🔐 HashiCorp Vault (secrets management) **(in Dev-mode)**
 * 🛠 Jenkins (CI server, preconfigured)
 * 📊 Zabbix (monitoring system)
 * 🔄 Nginx Reverse Proxy (DNS-based access)
@@ -13,7 +13,14 @@ This project provides a fully automated DevOps environment deployed using **Vagr
 All components are automatically configured.
 
 ## ⚙️ Setup
-### 1. Configure hosts file
+### 1. Install Oracle Virtual-Box and Vagrant
+* **Virtual-Box**: You can visit https://www.virtualbox.org/ to get the latest version for your PC
+* **Vagrant**: You can visit https://developer.hashicorp.com/vagrant/install to install teh latest version of vagrant for your PC
+### 2. Clone this repository
+```bash
+git clone https://github.com/OrestShchukin/Debian12-Jenkins-Vault-Zabbix.git
+```
+### 3. Configure "hosts" file
 
 Add the following entries on your host machine:
 
@@ -29,7 +36,8 @@ Add the following entries on your host machine:
 * **macOS:** `/private/etc/hosts`
 
 
-### 2. Start the environment
+### 4. Start the environment
+Open the terminal inside the cloned folder and run the command:
 ```bash
 vagrant up
 ```
@@ -38,7 +46,7 @@ vagrant up
 
 ## 🌐 Services:
 
-After configuration process you should be able to access the services via this URLs and be able to authentificate using provided credentials:
+After configuration process you should be able to access the services via this URLs and be able to authenticate using provided credentials:
 
 | Service | URL                     | Credentials       |
 | ------- | ----------------------- | ----------------- |
@@ -223,15 +231,4 @@ After deployment, the system provides:
 
 No manual UI configuration is required.
 
----
-
-## 🏁 Conclusion
-
-This project demonstrates:
-
-* Infrastructure as Code
-* Service orchestration
-* Monitoring automation
-* Reverse proxy configuration
-* DevOps best practices
 
