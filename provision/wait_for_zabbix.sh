@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ZBX_URL="http://127.0.0.1/api_jsonrpc.php"
+ZBX_URL="http://127.0.0.1:8081/api_jsonrpc.php"
 
 echo "[INFO] Waiting for Zabbix API login to become available..."
 
 for i in {1..60}; do
   RESPONSE=$(curl -s -X POST \
     -H 'Content-Type: application/json-rpc' \
-    -H 'Host: zabbix.local' \
     -d '{
       "jsonrpc": "2.0",
       "method": "user.login",

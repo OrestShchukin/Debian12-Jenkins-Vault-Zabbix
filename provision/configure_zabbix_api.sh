@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ZBX_URL="http://127.0.0.1/api_jsonrpc.php"
-ZBX_HOST_HEADER="zabbix.local"
+ZBX_URL="http://127.0.0.1:8081/api_jsonrpc.php"
 ZBX_USER="Admin"
 ZBX_PASS="zabbix"
 
@@ -24,7 +23,6 @@ api_call() {
 
   curl -sS -X POST \
     -H 'Content-Type: application/json-rpc' \
-    -H "Host: ${ZBX_HOST_HEADER}" \
     -d "$payload" \
     "$ZBX_URL"
 }
