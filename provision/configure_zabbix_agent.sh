@@ -23,7 +23,15 @@ UserParameter=service.vault,curl -kfsS -H 'Host: vault.local' https://127.0.0.1:
 UserParameter=service.zabbix_server,nc -z 127.0.0.1 10051 >/dev/null 2>&1 && echo 1 || echo 0
 EOF
 
+echo "[INFO] Adding zabbix user to docker group..."
+usermod -aG docker zabbix || true
+
+cat > /etc/zabbix/zabbix_agent2.d/docker.conf <<'EOF'
+Plugins.Docker.Endpoint=unix:///var/run/docker.sock
+EOF
+
 systemctl enable zabbix-agent2
 systemctl restart zabbix-agent2
 
 echo "[INFO] Zabbix Agent 2 configured."
+

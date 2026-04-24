@@ -9,6 +9,12 @@ HOST_NAME="devops-lab"
 HOST_IP="192.168.56.10"
 HOST_GROUP_NAME="Linux servers"
 
+LINUX_TEMPLATE_NAME="Linux by Zabbix agent"
+DOCKER_TEMPLATE_NAME="Docker by Zabbix agent 2"
+
+LINUX_TEMPLATE_ID=""
+DOCKER_TEMPLATE_ID=""
+
 CURL_OPTS=(-s --connect-timeout 5 --max-time 15 -X POST -H 'Content-Type: application/json-rpc')
 
 echo "[INFO] Waiting 20s for Zabbix services to stabilize..."
@@ -62,8 +68,8 @@ get_auth_token() {
   exit 1
 }
 
-get_template_id() {
-  echo "[INFO] Getting template ID for 'Linux by Zabbix agent'..."
+get_template_id_by_name() {
+  local template_name="$1"
 
   RESPONSE=$(api_call "{
     \"jsonrpc\": \"2.0\",
@@ -71,22 +77,34 @@ get_template_id() {
     \"params\": {
       \"output\": [\"templateid\", \"host\"],
       \"filter\": {
-        \"host\": [\"Linux by Zabbix agent\"]
+        \"host\": [\"${template_name}\"]
       }
     },
     \"auth\": \"${AUTH_TOKEN}\",
-    \"id\": 2
+    \"id\": 200
   }")
 
-  TEMPLATE_ID=$(echo "$RESPONSE" | jq -r '.result[0].templateid // empty')
+  echo "$RESPONSE" | jq -r '.result[0].templateid // empty'
+}
 
-  if [ -z "$TEMPLATE_ID" ]; then
-    echo "[ERROR] Could not find template ID for 'Linux by Zabbix agent'."
-    echo "$RESPONSE"
+get_templates_ids() {
+  echo "[INFO] Getting template IDs..."
+
+  LINUX_TEMPLATE_ID=$(get_template_id_by_name "$LINUX_TEMPLATE_NAME")
+  DOCKER_TEMPLATE_ID=$(get_template_id_by_name "$DOCKER_TEMPLATE_NAME")
+
+  if [ -z "$LINUX_TEMPLATE_ID" ]; then
+    echo "[ERROR] Could not find template: ${LINUX_TEMPLATE_NAME}"
     exit 1
   fi
 
-  echo "[INFO] Template ID: ${TEMPLATE_ID}"
+  if [ -z "$DOCKER_TEMPLATE_ID" ]; then
+    echo "[ERROR] Could not find template: ${DOCKER_TEMPLATE_NAME}"
+    exit 1
+  fi
+
+  echo "[INFO] Linux template ID: ${LINUX_TEMPLATE_ID}"
+  echo "[INFO] Docker template ID: ${DOCKER_TEMPLATE_ID}"
 }
 
 get_or_create_host_group() {
@@ -203,9 +221,12 @@ get_or_create_host() {
           }
         ],
         \"templates\": [
-          {
-            \"templateid\": \"${TEMPLATE_ID}\"
-          }
+            {
+              \"templateid\": \"${LINUX_TEMPLATE_ID}\"
+            },
+            {
+              \"templateid\": \"${DOCKER_TEMPLATE_ID}\"
+            }
         ]
       },
       \"auth\": \"${AUTH_TOKEN}\",
@@ -267,6 +288,37 @@ get_or_create_host() {
   echo "[ERROR] Failed to create host '${HOST_NAME}'."
   exit 1
 }
+
+ensure_templates_linked() {
+  echo "[INFO] Ensuring Linux and Docker templates are linked to host..."
+
+  RESPONSE=$(api_call "{
+    \"jsonrpc\": \"2.0\",
+    \"method\": \"host.update\",
+    \"params\": {
+      \"hostid\": \"${HOST_ID}\",
+      \"templates\": [
+        {
+          \"templateid\": \"${LINUX_TEMPLATE_ID}\"
+        },
+        {
+          \"templateid\": \"${DOCKER_TEMPLATE_ID}\"
+        }
+      ]
+    },
+    \"auth\": \"${AUTH_TOKEN}\",
+    \"id\": 201
+  }")
+
+  ERROR_MSG=$(echo "$RESPONSE" | jq -r '.error.data // .error.message // empty')
+
+  if [ -n "$ERROR_MSG" ]; then
+    echo "[WARN] host.update templates API response: ${ERROR_MSG}"
+  else
+    echo "[INFO] Templates linked successfully."
+  fi
+}
+
 
 get_host_interface_id() {
   echo "[INFO] Getting host interface ID..."
@@ -436,9 +488,10 @@ create_trigger_if_missing() {
 }
 
 get_auth_token
-get_template_id
+get_templates_ids
 get_or_create_host_group
 get_or_create_host
+ensure_templates_linked
 get_host_interface_id
 delete_default_zabbix_host
 
@@ -446,8 +499,8 @@ create_item_if_missing "Jenkins status" "service.jenkins"
 create_item_if_missing "Vault status" "service.vault"
 create_item_if_missing "Zabbix server status" "service.zabbix_server"
 
-create_trigger_if_missing "Jenkins is down" "last(/${HOST_NAME}/service.jenkins)=0"
-create_trigger_if_missing "Vault is down" "last(/${HOST_NAME}/service.vault)=0"
-create_trigger_if_missing "Zabbix server is down" "last(/${HOST_NAME}/service.zabbix_server)=0"
+create_trigger_if_missing "Jenkins: Not accessible through web" "last(/${HOST_NAME}/service.jenkins)=0"
+create_trigger_if_missing "Vault: Not accessible through web" "last(/${HOST_NAME}/service.vault)=0"
+create_trigger_if_missing "Zabbix server: Not accessible through web" "last(/${HOST_NAME}/service.zabbix_server)=0"
 
 echo "[INFO] Zabbix API configuration completed successfully."
