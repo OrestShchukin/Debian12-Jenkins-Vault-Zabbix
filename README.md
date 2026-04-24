@@ -22,7 +22,7 @@ git clone https://github.com/OrestShchukin/Debian12-Jenkins-Vault-Zabbix.git
 ```
 ### 3. Configure "hosts" file
 
-Add the following entries on your host machine:
+Add the following entry on your host machine:
 
 ```dns
 192.168.56.10 vault.local jenkins.local zabbix.local
@@ -204,7 +204,7 @@ vagrant destroy -f
 
 ## 🧠 Design Decisions
 
-- `/opt/devops-stack` used as runtime directory (production-like structure)
+- `/opt/devops-stack` used as runtime directory
 - `/vagrant` used as source of truth
 - Docker Compose network used for internal service communication
 - Reverse proxy used instead of direct port exposure
