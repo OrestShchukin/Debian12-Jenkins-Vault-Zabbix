@@ -4,11 +4,11 @@
 
 This project provides a fully automated DevOps environment deployed using **Vagrant + Docker Compose**.
 
-* 🔐 HashiCorp Vault (secrets management) **(in Dev-mode)**
-* 🛠 Jenkins (CI server, preconfigured)
-* 📊 Zabbix (monitoring system)
-* 🔄 Nginx Reverse Proxy (DNS-based access)
-* 🖥 Zabbix Agent (monitoring the VM itself)
+* HashiCorp Vault (secrets management) **(in Dev-mode)**
+* Jenkins (CI server, preconfigured)
+* Zabbix (monitoring system)
+* Nginx Reverse Proxy (DNS-based access)
+* Zabbix Agent (monitoring the VM itself)
 
 All components are automatically configured.
 
@@ -24,10 +24,8 @@ git clone https://github.com/OrestShchukin/Debian12-Jenkins-Vault-Zabbix.git
 
 Add the following entries on your host machine:
 
-```text
-192.168.56.10 vault.local
-192.168.56.10 jenkins.local
-192.168.56.10 zabbix.local
+```dns
+192.168.56.10 vault.local jenkins.local zabbix.local
 ```
 
 **Hint**: "hosts" file locations on different OS:
@@ -72,7 +70,9 @@ All services are deployed via Docker Compose and connected through an internal D
 | PostgreSQL    | Zabbix database                      |
 | Zabbix Agent  | Monitors VM and services             |
 
-External access is handled via Nginx:
+
+
+### External access is handled via Nginx:
 
 | Domain        | Target          |
 | ------------- | --------------- |
@@ -80,11 +80,89 @@ External access is handled via Nginx:
 | zabbix.local  | zabbix-web:8080 |
 | vault.local   | vault:8200      |
 
-Zabbix monitors both system metrics and service availability (Jenkins, Vault, Zabbix Server).
-
+Nginx routes traffic based on domain name. This eliminates the need for manual port usage.
 
 
 ---
+
+## 🧪 Usage Examples
+
+### Jenkins (CI Example)
+
+1. Open: https://jenkins.local  
+2. Login with provided credentials  
+3. Click **"New Item"**  
+4. Enter name: `test-job`  
+5. Select **Freestyle project** → OK  
+6. Scroll to **Build Steps** → Add build step → **Execute shell**  
+7. Add command:
+
+```bash
+echo "Hello from Jenkins"
+```
+8. Click Save
+9. Click Build Now
+10. Open the build → Console Output
+
+This verifies that Jenkins is working and able to execute jobs.
+
+---
+### Vault (Secrets Management Example - Dev Mode)
+
+Vault runs in Dev Mode:
+
+- No unsealing required  
+- Root token is predefined (`root`)  
+- Data is stored in memory (not persistent)  
+- **Not suitable for production**  
+
+Create a secret via UI:
+
+1. Open https://vault.local:8200  
+2. Select "Token" authentication  
+3. Enter token: root  
+4. Click "Sign in"  
+5. Go to "Secrets" → "secret/"  
+6. Click "Create secret"  
+7. Enter:
+   - Path: myapp  
+   - Key: password  
+   - Value: 123456  
+8. Click "Save"  
+
+Verify the secret:
+
+- Open secret/myapp  
+- Confirm the stored key/value  
+
+Expected result: the secret is created and visible in Vault UI.
+
+---
+### Zabbix (Monitoring Example)
+
+1. Open https://zabbix.local  
+2. Login with credentials  
+3. Navigate to:
+
+Monitoring → Hosts → devops-lab
+
+4. Check:
+
+- "Latest Data":
+  - CPU, RAM, Disk metrics  
+  - Docker container metrics  
+- "Problems":
+  - Service failures (if any)  
+
+What is monitored:
+
+- VM system metrics (CPU, memory, disk)  
+- Docker containers (auto-discovery)  
+- Service availability:
+  - Jenkins  
+  - Vault  
+  - Zabbix Server  
+
 
 ## ⚙️ Technologies Used
 
@@ -96,89 +174,13 @@ Zabbix monitors both system metrics and service availability (Jenkins, Vault, Za
 * **Zabbix** – monitoring system
 * **Zabbix Agent 2** – system + service monitoring
 
----
 
-## 🔄 Automation Features
 
-Everything is configured automatically via provisioning scripts:
 
-### ✔ Infrastructure
-
-* VM creation (Debian 12)
-* Docker installation
-* Containers deployment
-
-### ✔ Jenkins
-
-* Setup wizard disabled
-* Admin user created automatically
-* Plugins installed
-* Security configured
-
-### ✔ Vault
-
-* Runs in dev mode
-* Root token preset
-
-### ✔ Zabbix
-
-* Agent installed and configured
-* Host `devops-lab` created via API
-* Linux template attached
-* Custom items created:
-
-  * `service.jenkins`
-  * `service.vault`
-  * `service.zabbix_server`
-* Triggers configured for service availability
-
-### ✔ Cleanup
-
-* Default `Zabbix server` host removed (not applicable in containerized setup)
 
 ---
 
-## 📊 Monitoring
-
-Zabbix monitors:
-
-### System metrics:
-
-* CPU
-* RAM
-* Disk usage
-
-### Service availability:
-
-* Jenkins
-* Vault
-* Zabbix Server
-
-Service checks are implemented using **Zabbix Agent UserParameters**:
-
-```ini
-service.jenkins
-service.vault
-service.zabbix_server
-```
-
----
-
-## 🌍 Reverse Proxy
-
-Nginx routes traffic based on domain name:
-
-| Domain        | Target          |
-| ------------- | --------------- |
-| jenkins.local | jenkins:8080    |
-| zabbix.local  | zabbix-web:8080 |
-| vault.local   | vault:8200      |
-
-This eliminates the need for manual port usage.
-
----
-
-## ▶️ Usage
+## ▶️ Environment Commands
 
 ### Start environment
 
@@ -202,11 +204,13 @@ vagrant destroy -f
 
 ## 🧠 Design Decisions
 
-* `/opt/devops-stack` used as runtime directory (production-like structure)
-* `/vagrant` used as source of truth
-* Docker Compose network used for internal service communication
-* Reverse proxy used instead of direct port exposure
-* Zabbix configured via API (fully automated monitoring setup)
+- `/opt/devops-stack` used as runtime directory (production-like structure)
+- `/vagrant` used as source of truth
+- Docker Compose network used for internal service communication
+- Reverse proxy used instead of direct port exposure
+- Zabbix configured via API (fully automated monitoring setup)
+- Zabbix Agent 2 Docker plugin used for container-level monitoring (auto-discovery of containers)
+- Self-signed TLS certificates used to provide HTTPS access to services
 
 ---
 
