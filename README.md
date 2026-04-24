@@ -15,7 +15,7 @@ All components are automatically configured.
 ## ⚙️ Setup
 ### 1. Install Oracle Virtual-Box and Vagrant
 * **Virtual-Box**: You can visit https://www.virtualbox.org/ to get the latest version for your PC
-* **Vagrant**: You can visit https://developer.hashicorp.com/vagrant/install to install teh latest version of vagrant for your PC
+* **Vagrant**: You can visit https://developer.hashicorp.com/vagrant/install to install the latest version of vagrant for your PC
 ### 2. Clone this repository
 ```bash
 git clone https://github.com/OrestShchukin/Debian12-Jenkins-Vault-Zabbix.git
